@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% block title %}Login | Case Management{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-6 col-lg-5">
+    <div class="card p-4 my-5">
+      <div class="card-body">
+        <h3 class="card-title text-center mb-4">
+          <span class="material-icons text-primary">lock</span>
+          Login
+        </h3>
+        <form method="post">
+          {% csrf_token %}
+          <div class="mb-3">
+            <label class="form-label" for="username">Username</label>
+            <input type="text" class="form-control rounded-pill" name="username" id="username" required autofocus>
+          </div>
+          <div class="mb-3">
+            <label class="form-label" for="password">Password</label>
+            <input type="password" class="form-control rounded-pill" name="password" id="password" required>
+          </div>
+          <button class="btn btn-primary w-100 btn-lg rounded-pill" type="submit">Login</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,316 @@
+{% extends 'base.html' %}
+{% block title %}Case List | Case Management{% endblock %}
+
+{% block content %}
+<div class="card mb-4 p-4">
+  <form class="row g-3 align-items-end" method="get">
+    <div class="col-md-2">
+      <label for="filterDate" class="form-label">Date</label>
+      <input id="filterDate" type="date" name="date" value="{{ filter_date }}" class="form-control rounded-pill">
+    </div>
+    <div class="col-md-3">
+      <label for="filterCandidate" class="form-label">Candidate</label>
+      <input id="filterCandidate" type="text" name="candidate" value="{{ filter_candidate }}" class="form-control rounded-pill" placeholder="Candidate Name">
+    </div>
+    <div class="col-md-3">
+      <label for="filterCompany" class="form-label">Company</label>
+      <input id="filterCompany" type="text" name="company" value="{{ filter_company }}" class="form-control rounded-pill" placeholder="Company">
+    </div>
+    <div class="col-md-2">
+      <label for="filterSupportType" class="form-label">Support Type</label>
+      <input id="filterSupportType" type="text" name="support_type" value="{{ filter_support_type }}" class="form-control rounded-pill" placeholder="interview support">
+    </div>
+    <div class="col-md-2 d-grid">
+      <button type="submit" class="btn btn-primary rounded-pill">
+        <span class="material-icons" style="font-size:1.2rem; vertical-align:middle;">search</span> Filter
+      </button>
+    </div>
+  </form>
+</div>
+
+<div class="card shadow-sm p-3">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="mb-0">Cases</h4>
+    <div>
+      <button type="button" class="btn btn-primary rounded-pill" data-bs-toggle="modal" data-bs-target="#busyModal">
+        Busy
+      </button>
+    </div>
+  </div>
+
+<div class="table-responsive">
+  <table class="table table-hover align-middle">
+    <thead class="table-light">
+      <tr>
+        <th>Date</th>
+        <th>Start Time</th>
+        <th>End Time</th>
+        <th>Candidate</th>
+        <th>Task</th>
+        <th>Feedback</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody id="cases-tbody">
+      {% for case in cases %}
+      <tr class="case-row">
+        <td>{{ case.date }}</td>
+        <td>{{ case.start_time }}</td>
+        <td>{{ case.end_time }}</td>
+        <td>{{ case.candidate.name }}</td>
+        <td>
+          {% if case.task %}
+            {{ case.task.task_status }}
+          {% else %}
+            -
+          {% endif %}
+        </td>
+        <td>
+          {% if not case.feedback or case.feedback|length < 5 %}
+            ❌ Feedback Pending
+          {% else %}
+            ✅ Feedback Done
+          {% endif %}
+        </td>
+        <td>
+          <a href="{% url 'case-edit' case.pk %}" 
+             class="btn btn-outline-secondary btn-sm rounded-pill">
+            <span class="material-icons" style="font-size:1.2rem;">edit</span> Edit
+          </a>
+          <button class="btn btn-outline-primary btn-sm rounded-pill"
+                  data-bs-toggle="modal" 
+                  data-bs-target="#caseModal{{case.pk}}">
+            More
+          </button>
+        </td>
+      </tr>
+
+      <!-- Modal -->
+      <div class="modal fade" id="caseModal{{case.pk}}" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title">Case Details - {{ case.candidate.name }}</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <dl class="row">
+                <dt class="col-sm-4">Technology</dt>
+                <dd class="col-sm-8">{{ case.candidate_technology }}</dd>
+
+                <dt class="col-sm-4">Company</dt>
+                <dd class="col-sm-8">{{ case.company }}</dd>
+
+                <dt class="col-sm-4">Resume</dt>
+                <dd class="col-sm-8">
+                  <a href="{{case.candidate_resume}}" target="_blank">View Resume</a>
+                </dd>
+
+
+
+                <dt class="col-sm-4">Email</dt>
+                <dd class="col-sm-8">{{ case.candidate_email }}</dd>
+
+                <dt class="col-sm-4">Contact</dt>
+                <dd class="col-sm-8">{{ case.candidate_phone }}</dd>
+
+                <dt class="col-sm-4">Round</dt>
+                <dd class="col-sm-8">{{ case.round.round_name }}</dd>
+
+                <dt class="col-sm-4">Support Type</dt>
+                <dd class="col-sm-8">{% if case.support_type %}{{ case.support_type }}{% endif %}</dd>
+
+                <dt class="col-sm-4">Job Description</dt>
+                <dd class="col-sm-8">{{ case.JOB_DES }}</dd>
+              </dl>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {% empty %}
+      <tr>
+        <td colspan="7" class="text-center text-muted">No data found.</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+
+  <!-- Pagination Controls -->
+  <div class="d-flex justify-content-between align-items-center mt-3">
+    <button id="prev-btn" class="btn btn-secondary rounded-pill" disabled>Previous</button>
+
+    <div id="page-numbers" class="btn-group" role="group" aria-label="Page number navigation">
+      <!-- Page buttons inserted by JS -->
+    </div>
+
+    <button id="next-btn" class="btn btn-primary rounded-pill">Next</button>
+  </div>
+
+  <div class="mt-2 text-center">
+    <small>Page <span id="current-page">1</span> of <span id="total-pages">1</span></small>
+  </div>
+</div>
+
+<!-- Modal with Busy Time Form -->
+<div class="modal fade" id="busyModal" tabindex="-1" aria-labelledby="busyModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="post">
+        {% csrf_token %}
+        <div class="modal-header">
+          <h5 class="modal-title" id="busyModalLabel">Notify Superuser You Are Busy</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            {{ form.start_time.label_tag }}
+            {{ form.start_time }}
+            {{ form.start_time.errors }}
+          </div>
+          <div class="mb-3">
+            {{ form.end_time.label_tag }}
+            {{ form.end_time }}
+            {{ form.end_time.errors }}
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary rounded-pill">Send Notification</button>
+          <button type="button" class="btn btn-secondary rounded-pill" data-bs-dismiss="modal">Close</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+// ---------- Pagination (client-side) ----------
+function initPagination() {
+  const rows = document.querySelectorAll('#cases-tbody .case-row');
+  const perPage = 30;
+  let currentPage = 1;
+  const totalPages = Math.max(1, Math.ceil(rows.length / perPage));
+
+  const prevBtn = document.getElementById('prev-btn');
+  const nextBtn = document.getElementById('next-btn');
+  const pageNumbersDiv = document.getElementById('page-numbers');
+  const currentPageSpan = document.getElementById('current-page');
+  const totalPagesSpan = document.getElementById('total-pages');
+
+  totalPagesSpan.textContent = totalPages;
+
+  function showPage(page) {
+    const clamped = Math.min(Math.max(page, 1), totalPages);
+    const start = (clamped - 1) * perPage;
+    const end = start + perPage;
+
+    rows.forEach((row, index) => {
+      row.style.display = (index >= start && index < end) ? '' : 'none';
+    });
+
+    currentPage = clamped;
+    currentPageSpan.textContent = currentPage;
+    prevBtn.disabled = currentPage === 1;
+    nextBtn.disabled = currentPage === totalPages;
+
+    updatePageNumbers();
+  }
+
+  function createPageButton(page) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'btn btn-outline-primary btn-sm';
+    btn.textContent = page;
+    if (page === currentPage) {
+      btn.classList.add('active');
+      btn.setAttribute('aria-current', 'page');
+    }
+    btn.addEventListener('click', () => showPage(page));
+    return btn;
+  }
+
+  function createEllipsis() {
+    const span = document.createElement('span');
+    span.className = 'btn btn-outline-secondary btn-sm disabled';
+    span.textContent = '...';
+    return span;
+  }
+
+  function updatePageNumbers() {
+    pageNumbersDiv.innerHTML = '';
+
+    const maxVisibleButtons = 7;
+    if (totalPages <= maxVisibleButtons) {
+      for (let i = 1; i <= totalPages; i++) {
+        pageNumbersDiv.appendChild(createPageButton(i));
+      }
+    } else {
+      pageNumbersDiv.appendChild(createPageButton(1));
+
+      let left = currentPage - 2;
+      let right = currentPage + 2;
+
+      if (left < 2) { right += (2 - left); left = 2; }
+      if (right > totalPages - 1) { left -= (right - (totalPages - 1)); right = totalPages - 1; }
+
+      if (left > 2) pageNumbersDiv.appendChild(createEllipsis());
+
+      for (let i = left; i <= right; i++) {
+        if (i > 1 && i < totalPages) pageNumbersDiv.appendChild(createPageButton(i));
+      }
+
+      if (right < totalPages - 1) pageNumbersDiv.appendChild(createEllipsis());
+      pageNumbersDiv.appendChild(createPageButton(totalPages));
+    }
+  }
+
+  prevBtn.onclick = () => { if (currentPage > 1) showPage(currentPage - 1); };
+  nextBtn.onclick = () => { if (currentPage < totalPages) showPage(currentPage + 1); };
+
+  showPage(1);
+}
+
+// ---------- Auto-refresh ONLY the <tbody> ----------
+async function refreshTableBody() {
+  try {
+    const resp = await fetch(window.location.href, { credentials: 'same-origin' });
+    if (!resp.ok) return;
+
+    const htmlText = await resp.text();
+    const doc = new DOMParser().parseFromString(htmlText, 'text/html');
+
+    const newTbody = doc.querySelector('#cases-tbody');
+    const currentTbody = document.getElementById('cases-tbody');
+
+    if (newTbody && currentTbody) {
+      // Optional subtle fade
+      currentTbody.style.opacity = 0.6;
+
+      currentTbody.innerHTML = newTbody.innerHTML;
+
+      // Re-init pagination since row count may have changed
+      initPagination();
+
+      // Restore opacity
+      requestAnimationFrame(() => {
+        currentTbody.style.transition = 'opacity 150ms';
+        currentTbody.style.opacity = 1;
+      });
+    }
+  } catch (e) {
+    console.error('Failed to refresh table body:', e);
+  }
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+  initPagination();
+  // Refresh tbody every 30 seconds
+  setInterval(refreshTableBody, 30000);
+});
+</script>
+{% endblock %}
