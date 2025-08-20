@@ -1,23 +1,65 @@
-version: '3.9'
+version: "3.9"
 
 services:
   web:
-    build: .
-    command: gunicorn vizva.wsgi:application --bind 0.0.0.0:8000
-    volumes:
-      - .:/app
+    build:
+      context: .
+      target: runtime
+    image: vizva:web
+    restart: unless-stopped
+    environment:
+      # Django settings
+      DATABASE_URL: "postgresql://neondb_owner:npg_VYzQOh5wE1xt@ep-blue-pine-adxaewue-pooler.c-2.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
+      DJANGO_SETTINGS_MODULE: "vizva.settings"
+      DJANGO_SECRET_KEY: "super-secret-change-me"
+      DJANGO_DEBUG: "0"
+      DJANGO_ALLOWED_HOSTS: "localhost,127.0.0.1,web,crm.tunnelto.dev"
+      SECURE_SSL_REDIRECT: "1"
+      CSRF_TRUSTED_ORIGINS: "https://crm.tunnelto.dev"
     ports:
       - "8000:8000"
-    env_file:
-      - .env
-    depends_on:
-      - db
+    volumes:
+      - .:/app
+      - staticfiles:/app/staticfiles
+      - media:/app/media
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8000/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    command: >
+      gunicorn vizva.wsgi:application
+      --bind 0.0.0.0:8000
+      -w 3 -k gthread --threads 4 --timeout 60
 
-  db:
-    image: postgres:15
+  tunnelto:
+    image: backdevs/tunnelto:0.1.18
+    restart: unless-stopped
     environment:
-      POSTGRES_DB: neondb
-      POSTGRES_USER: neondb_owner
-      POSTGRES_PASSWORD: npg_VYzQOh5wE1xt
-    ports:
-      - "5432:5432"
+      KEY: "acbe873a8517a13f3e846a739249a8c7"
+      SCHEME: "http"
+      HOST: "web"
+      SUBDOMAIN: "crm"   # must be lowercase
+      PORT: "8000"
+    depends_on:
+      web:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://web:8000/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  autoheal:
+    image: willfarrell/autoheal
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      AUTOHEAL_CONTAINER_LABEL: all
+
+volumes:
+  staticfiles:
+  media:
