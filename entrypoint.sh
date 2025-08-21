@@ -1,9 +1,8 @@
-#!/bin/sh
+set -e
 
-echo "Running migrations..."
-python manage.py migrate
+export DATABASE_URL="${DATABASE_URL}"
 
-echo "Collecting static files..."
-python manage.py collectstatic --noinput
+python manage.py migrate --noinput
+python manage.py collectstatic --noinput || true
 
-exec "$@"
+exec gunicorn vizva.wsgi:application --bind 0.0.0.0:8000 --workers 3 --timeout 120
