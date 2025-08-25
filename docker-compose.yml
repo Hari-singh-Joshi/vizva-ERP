@@ -1,13 +1,45 @@
 version: "3.9"
 
 services:
-  web:
+  app:
     build: .
+    container_name: vizva-erp
+    restart: unless-stopped
     ports:
       - "8000:8000"
-    env_file:
-      - .env
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
     volumes:
       - .:/app
-    command: >
-      sh -lc 'export DATABASE_URL="$DATABASE_URL"; /start.sh'
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8000/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+  tunnelto:
+    image: backdevs/tunnelto:0.1.18
+    restart: unless-stopped
+    environment:
+      KEY: "acbe873a8517a13f3e846a739249a8c7"
+      SCHEME: "http"
+      HOST: "app"
+      SUBDOMAIN: "sshhh"
+      PORT: "8000"
+    depends_on:
+      - app
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://app:8000/ || exit 1"]
+      interval: 5s
+      timeout: 2s
+      retries: 3
+      start_period: 15s
+
+  autoheal:
+    image: willfarrell/autoheal
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      AUTOHEAL_CONTAINER_LABEL: all
