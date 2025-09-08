@@ -81,9 +81,9 @@ from .models import Candidate, Case
 @admin.register(Candidate)
 class CandidateAdmin(admin.ModelAdmin):
     list_display = ['id', 'name', 'technology', 'expert_status', 'status_flag']
-    list_filter = ['technology', 'status_flag', 'expert']
+    list_filter = ['technology', 'status_flag', 'expert','recruiter']
     search_fields = ['name', 'email', 'phone_number']
-    autocomplete_fields = ['technology', 'expert']
+    autocomplete_fields = ['technology', 'expert','recruiter']
 
     @admin.display(description="Expert")
     def expert_status(self, obj):
