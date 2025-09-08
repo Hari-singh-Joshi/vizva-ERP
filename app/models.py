@@ -31,6 +31,35 @@ class Task(models.Model):
     task_status = models.CharField(max_length=50, choices=STATUS_CHOICES)
     def __str__(self):
         return self.task_status
+    
+class MarketingTeam(models.Model):
+    user = models.OneToOneField(
+        User,
+        on_delete=models.CASCADE,
+        related_name='marketing_profile',
+        null=True,
+        blank=True
+    )
+    name = models.CharField(max_length=100)
+    is_team_lead = models.BooleanField(default=False)
+    date_of_joining = models.DateField(null=True, blank=True)
+    team_lead = models.ForeignKey(
+        'self',
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='team_members'
+    )
+    status_flag = models.BooleanField(default=True)
+
+    class Meta:
+        verbose_name = "Marketing Member"
+        verbose_name_plural = "Marketing Team"
+
+    def __str__(self):
+        return self.name
+
+   
 
 class Expert(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='expert_profile',null=True, blank=True)
@@ -54,6 +83,9 @@ class Candidate(models.Model):
     )
     expert = models.ForeignKey(
         Expert, on_delete=models.SET_NULL, null=True, blank=True, related_name='candidates'
+    )
+    recruiter = models.ForeignKey(
+        MarketingTeam, on_delete=models.SET_NULL, null=True, blank=True, related_name='candidates'
     )
     email = models.EmailField(max_length=255)
     phone_number = models.CharField(max_length=20)
@@ -184,32 +216,3 @@ class Notification(models.Model):
     def __str__(self):
         return f'Notification from {self.sender} to {self.recipient}: {self.message[:20]}'
     
-    
-class MarketingTeam(models.Model):
-    user = models.OneToOneField(
-        User,
-        on_delete=models.CASCADE,
-        related_name='marketing_profile',
-        null=True,
-        blank=True
-    )
-    name = models.CharField(max_length=100)
-    is_team_lead = models.BooleanField(default=False)
-    date_of_joining = models.DateField(null=True, blank=True)
-    team_lead = models.ForeignKey(
-        'self',
-        null=True,
-        blank=True,
-        on_delete=models.SET_NULL,
-        related_name='team_members'
-    )
-    status_flag = models.BooleanField(default=True)
-
-    class Meta:
-        verbose_name = "Marketing Member"
-        verbose_name_plural = "Marketing Team"
-
-    def __str__(self):
-        return self.name
-
-   
