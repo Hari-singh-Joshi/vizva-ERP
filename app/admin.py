@@ -193,18 +193,34 @@ class NotificationAdmin(admin.ModelAdmin):
 
 # ---------- Marketing Team ----------
 
+class MarketingTeamAdminForm(forms.ModelForm):
+    class Meta:
+        model = MarketingTeam
+        fields = "__all__"
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # ✅ Only marketing members who are marked as team leads can be selected
+        self.fields['team_lead'].queryset = MarketingTeam.objects.filter(is_team_lead=True)
+
+
 @admin.register(MarketingTeam)
 class MarketingTeamAdmin(admin.ModelAdmin):
-    list_display = (
-        'name', 'is_team_lead', 'team_lead', 'date_of_joining', 'status_flag', 'team_members_list',
-    )
-    list_filter = ('is_team_lead', 'status_flag', 'date_of_joining')
-    search_fields = ('name', 'user__username', 'user__email')
-    autocomplete_fields = ('team_lead', 'user')
+    form = MarketingTeamAdminForm   # ✅ use the custom form
+
+    list_display = [
+        'id', 'name', 'is_team_lead', 'team_lead',
+        'date_of_joining', 'status_flag', 'team_members_list',
+    ]
+    list_filter = ['is_team_lead', 'status_flag', 'date_of_joining']
+    search_fields = ['name', 'user__username', 'user__email']
+    # 🚨 Important: remove team_lead from autocomplete if you want filtering to apply
+    autocomplete_fields = ['user']
 
     def team_members_list(self, obj):
         return ", ".join(member.name for member in obj.team_members.all()) or "No members"
     team_members_list.short_description = "Team Members"
+
 
 
 # ---------- Export all models to XLSX ----------
