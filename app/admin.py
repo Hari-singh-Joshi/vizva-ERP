@@ -126,7 +126,6 @@ class CaseAdminForm(forms.ModelForm):
 
 
 # ---------- Case Admin ----------
-
 @admin.register(Case)
 class CaseAdmin(admin.ModelAdmin):
     form = CaseAdminForm
@@ -150,7 +149,11 @@ class CaseAdmin(admin.ModelAdmin):
     ]
     # Keep autocomplete for other fields; NOT for candidate (to show emojis in dropdown)
     autocomplete_fields = ['expert', 'task', 'support_type', 'round', 'filled_by']
-    readonly_fields = ['filled_by', 'candidate_technology', 'candidate_email', 'candidate_phone','candidate_resume','feedback','task','status']
+    readonly_fields = [
+        'filled_by', 'candidate_technology', 'candidate_email',
+        'candidate_phone', 'candidate_resume', 'feedback',
+        'task', 'status'
+    ]
 
     @admin.display(description='Feedback Status', ordering='feedback')
     def feedback_status(self, obj):
@@ -162,7 +165,22 @@ class CaseAdmin(admin.ModelAdmin):
             obj.filled_by = request.user
         super().save_model(request, obj, form, change)
 
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        user = request.user
 
+        # Superuser can see everything
+        if user.is_superuser:
+            return qs
+
+        # Get logged-in user's marketing profile (if any)
+        marketing_member = getattr(user, "marketing_profile", None)
+        if marketing_member:
+            # ✅ Only show cases where candidate.recruiter == this marketing member
+            return qs.filter(candidate__recruiter=marketing_member)
+
+        # Default: no access
+        return qs.none()
     
 
 @admin.register(PH)
