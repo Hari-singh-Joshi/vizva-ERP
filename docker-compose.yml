@@ -1,45 +1,37 @@
-version: "3.9"
+version: '3.9'
 
 services:
-  app:
+  web:
     build: .
-    container_name: vizva-erp
-    restart: unless-stopped
-    ports:
-      - "8000:8000"
-    environment:
-      - DATABASE_URL=${DATABASE_URL}
+    command: gunicorn vizva.wsgi:application --bind 0.0.0.0:8000
     volumes:
       - .:/app
-    healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:8000/ || exit 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
-      start_period: 20s
-
-  tunnelto:
-    image: backdevs/tunnelto:0.1.18
-    restart: unless-stopped
-    environment:
-      KEY: "acbe873a8517a13f3e846a739249a8c7"
-      SCHEME: "http"
-      HOST: "app"
-      SUBDOMAIN: "sshhh"
-      PORT: "8000"
+      - static_volume:/app/static
+      - media_volume:/app/media
+    env_file:
+      - .env
     depends_on:
-      - app
-    healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://app:8000/ || exit 1"]
-      interval: 5s
-      timeout: 2s
-      retries: 3
-      start_period: 15s
+      - db
 
-  autoheal:
-    image: willfarrell/autoheal
-    restart: unless-stopped
+  db:
+    image: postgres:15
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-    environment:
-      AUTOHEAL_CONTAINER_LABEL: all
+      - postgres_data:/var/lib/postgresql/data
+    env_file:
+      - .env
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx:/etc/nginx/conf.d
+      - static_volume:/app/static
+      - media_volume:/app/media
+    depends_on:
+      - web
+
+volumes:
+  postgres_data:
+  static_volume:
+  media_volume:
