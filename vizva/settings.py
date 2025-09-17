@@ -25,11 +25,11 @@ SECRET_KEY = 'django-insecure-*$i%_^)@*k15*18_(@#8k#i@3_)ib_ueh5myt_f_3-#999v5$$
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["*"]
+ALLOWED_HOSTS = ["vizva.jiffymenu.com"]
 
 CSRF_TRUSTED_ORIGINS = [
-    "http://vizva.jiffymenu.com"
-    "http://69.62.76.34:8001",   
+    "https://vizva.jiffymenu.com",
+    "http://vizva.jiffymenu.com"   # optional if you still allow HTTP
 ]
 
 
