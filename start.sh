@@ -10,4 +10,5 @@ python manage.py migrate --noinput
 python manage.py collectstatic --noinput
 
 # Start Gunicorn
-gunicorn vizva.wsgi:application --bind 0.0.0.0:$PORT
+cd app && gunicorn vizva.wsgi:application --bind 0.0.0.0:$PORT
+
