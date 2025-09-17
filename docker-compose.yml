@@ -5,7 +5,7 @@ services:
     build:
       context: .
       args:
-        DJANGO_PORT: ${DJANGO_PORT:-8001}   # Default 8001 if not in .env
+        DJANGO_PORT: ${DJANGO_PORT:-8001}
     command: gunicorn vizva.wsgi:application --bind 0.0.0.0:${DJANGO_PORT:-8001} --workers 3
     volumes:
       - .:/app
@@ -13,17 +13,3 @@ services:
       - .env
     ports:
       - "${DJANGO_PORT:-8001}:${DJANGO_PORT:-8001}"
-    depends_on:
-      - db
-
-  db:
-    image: postgres:15
-    volumes:
-      - postgres_data:/var/lib/postgresql/data/
-    env_file:
-      - .env
-    ports:
-      - "5432:5432"
-
-volumes:
-  postgres_data:
