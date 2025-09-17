@@ -1,5 +1,6 @@
 FROM python:3.11-slim
 
+# Prevent Python from writing .pyc files and force stdout/stderr flushing
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
@@ -19,7 +20,5 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy project files
 COPY . .
 
-# Do NOT run collectstatic here (env vars not available yet)
-
-# Run migrations + collectstatic at runtime
-CMD ["sh", "-c", "python manage.py migrate && python manage.py collectstatic --noinput && gunicorn vizva.wsgi:application --bind 0.0.0.0:$PORT"]
+# Run migrations + collectstatic at runtime with Railway’s env vars
+CMD sh -c "python manage.py migrate && python manage.py collectstatic --noinput && gunicorn vizva.wsgi:application --bind 0.0.0.0:$PORT"
