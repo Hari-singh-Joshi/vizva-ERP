@@ -25,9 +25,9 @@ SECRET_KEY = 'django-insecure-*$i%_^)@*k15*18_(@#8k#i@3_)ib_ueh5myt_f_3-#999v5$$
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = ["*"]
+ALLOWED_HOSTS = ["69.62.76.34"]
 
-CSRF_TRUSTED_ORIGINS = ["https://vizva-erp-production.up.railway.app"]
+CSRF_TRUSTED_ORIGINS = ["http://69.62.76.34"]
 
 
 # Application definition
