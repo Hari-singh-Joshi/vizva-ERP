@@ -28,9 +28,8 @@ DEBUG = True
 ALLOWED_HOSTS = ["*"]
 
 CSRF_TRUSTED_ORIGINS = [
-    "http://69.62.76.34:8001",   # your VM IP + port
-    "http://localhost:8001",     # optional for testing
-    "http://127.0.0.1:8001",     # optional
+    "http://vizva.jiffymenu.com"
+    "http://69.62.76.34:8001",   
 ]
 
 
