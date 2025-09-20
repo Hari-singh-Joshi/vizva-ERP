@@ -9,35 +9,44 @@ from openpyxl.utils import get_column_letter
 
 from .models import (
     SupportType, Technology, Round, Task,
-    Expert, Candidate, Case, PH, Notification, MarketingTeam,Company
+    Expert, Candidate, Case, PH, Notification, MarketingTeam, Company
 )
+
+# ---------- Auto refresh base ----------
+class AutoRefreshAdmin(admin.ModelAdmin):
+    """Base admin that auto-refreshes changelist pages every 30 seconds."""
+    class Media:
+        js = ("admin/js/auto_refresh.js",)   # Path inside static/
+
 
 # ---------- Core model admins ----------
 
 @admin.register(SupportType)
-class SupportTypeAdmin(admin.ModelAdmin):
+class SupportTypeAdmin(AutoRefreshAdmin):
     list_display = ['id', 'support_name']
     search_fields = ['support_name']
 
 
 @admin.register(Technology)
-class TechnologyAdmin(admin.ModelAdmin):
+class TechnologyAdmin(AutoRefreshAdmin):
     list_display = ['id', 'technology_name']
     search_fields = ['technology_name']
 
+
 @admin.register(Company)
-class CompanyAdmin(admin.ModelAdmin):
+class CompanyAdmin(AutoRefreshAdmin):
     list_display = ['id', 'company_name']
     search_fields = ['company_name']
-    
+
+
 @admin.register(Round)
-class RoundAdmin(admin.ModelAdmin):
+class RoundAdmin(AutoRefreshAdmin):
     list_display = ['id', 'round_name']
     search_fields = ['round_name']
 
 
 @admin.register(Task)
-class TaskAdmin(admin.ModelAdmin):
+class TaskAdmin(AutoRefreshAdmin):
     list_display = ['id', 'task_status']
     list_filter = ['task_status']
     search_fields = ['task_status']
@@ -57,12 +66,11 @@ class ExpertAdminForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Only experts who are team leads can be selected as team_lead
         self.fields['team_lead'].queryset = Expert.objects.filter(is_team_lead=True)
 
 
 @admin.register(Expert)
-class ExpertAdmin(admin.ModelAdmin):
+class ExpertAdmin(AutoRefreshAdmin):
     form = ExpertAdminForm
     list_display = ['id', 'name', 'is_team_lead', 'team_lead', 'status_flag']
     list_filter = ['is_team_lead', 'status_flag']
@@ -70,20 +78,14 @@ class ExpertAdmin(admin.ModelAdmin):
     inlines = [CandidateInline]
 
 
-# admin.py
-from django import forms
-from django.contrib import admin
-from .models import Candidate, Case
-
-
 # ---------- Candidate Admin ----------
 
 @admin.register(Candidate)
-class CandidateAdmin(admin.ModelAdmin):
+class CandidateAdmin(AutoRefreshAdmin):
     list_display = ['id', 'name', 'technology', 'expert_status', 'status_flag']
-    list_filter = ['technology', 'status_flag', 'expert','recruiter']
+    list_filter = ['technology', 'status_flag', 'expert', 'recruiter']
     search_fields = ['name', 'email', 'phone_number']
-    autocomplete_fields = ['technology', 'expert','recruiter']
+    autocomplete_fields = ['technology', 'expert', 'recruiter']
 
     @admin.display(description="Expert")
     def expert_status(self, obj):
@@ -103,7 +105,6 @@ class FeedbackStatusFilter(admin.SimpleListFilter):
         ]
 
     def queryset(self, request, queryset):
-        # Matches: feedback_status = 'Not complete' if len(strip(feedback)) < 5
         if self.value() == 'done':
             return queryset.filter(feedback__isnull=False).exclude(feedback__regex=r'^\s{0,4}$')
         if self.value() == 'not_done':
@@ -116,18 +117,19 @@ class CandidateChoiceField(forms.ModelChoiceField):
     def label_from_instance(self, obj):
         return f"{obj.name} {'✅' if obj.expert_id else '❌'}"
 
+
 class CaseAdminForm(forms.ModelForm):
     class Meta:
         model = Case
         fields = "__all__"
 
-    # Use a normal select so emojis appear in the dropdown list
     candidate = CandidateChoiceField(queryset=Candidate.objects.all())
 
 
 # ---------- Case Admin ----------
+
 @admin.register(Case)
-class CaseAdmin(admin.ModelAdmin):
+class CaseAdmin(AutoRefreshAdmin):
     form = CaseAdminForm
 
     list_display = [
@@ -141,13 +143,12 @@ class CaseAdmin(admin.ModelAdmin):
         FeedbackStatusFilter
     ]
     search_fields = [
-        'company__company_name',  # FK text field
+        'company__company_name',
         'candidate__name',
         'expert__name',
         'feedback',
         'filled_by__username',
     ]
-    # Keep autocomplete for other fields; NOT for candidate (to show emojis in dropdown)
     autocomplete_fields = ['expert', 'task', 'support_type', 'round', 'filled_by']
     readonly_fields = [
         'filled_by', 'candidate_technology', 'candidate_email',
@@ -168,23 +169,16 @@ class CaseAdmin(admin.ModelAdmin):
     def get_queryset(self, request):
         qs = super().get_queryset(request)
         user = request.user
-
-        # Superuser can see everything
         if user.is_superuser:
             return qs
-
-        # Get logged-in user's marketing profile (if any)
         marketing_member = getattr(user, "marketing_profile", None)
         if marketing_member:
-            # ✅ Only show cases where candidate.recruiter == this marketing member
             return qs.filter(candidate__recruiter=marketing_member)
-
-        # Default: no access
         return qs.none()
-    
+
 
 @admin.register(PH)
-class PHAdmin(admin.ModelAdmin):
+class PHAdmin(AutoRefreshAdmin):
     list_display = ['date', 'candidate', 'technology', 'company', 'expert', 'team_lead', 'po_type']
     readonly_fields = ['expert', 'team_lead']
     autocomplete_fields = ['candidate', 'technology']
@@ -193,20 +187,19 @@ class PHAdmin(admin.ModelAdmin):
 # ---------- Notifications (read-only add) ----------
 
 @admin.register(Notification)
-class NotificationAdmin(admin.ModelAdmin):
+class NotificationAdmin(AutoRefreshAdmin):
     list_display = ('sender', 'recipient', 'message', 'created_at', 'read')
     list_filter = ('read', 'created_at')
     ordering = ('-created_at',)
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)
-        # Superusers only see notifications addressed to themselves
         if request.user.is_superuser:
             return qs.filter(recipient=request.user)
         return qs.none()
 
     def has_add_permission(self, request):
-        return False  # Users cannot create notifications from admin
+        return False
 
 
 # ---------- Marketing Team ----------
@@ -218,13 +211,12 @@ class MarketingTeamAdminForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # ✅ Only marketing members who are marked as team leads can be selected
         self.fields['team_lead'].queryset = MarketingTeam.objects.filter(is_team_lead=True)
 
 
 @admin.register(MarketingTeam)
-class MarketingTeamAdmin(admin.ModelAdmin):
-    form = MarketingTeamAdminForm   # ✅ use the custom form
+class MarketingTeamAdmin(AutoRefreshAdmin):
+    form = MarketingTeamAdminForm
 
     list_display = [
         'id', 'name', 'is_team_lead', 'team_lead',
@@ -232,13 +224,11 @@ class MarketingTeamAdmin(admin.ModelAdmin):
     ]
     list_filter = ['is_team_lead', 'status_flag', 'date_of_joining']
     search_fields = ['name', 'user__username', 'user__email']
-    # 🚨 Important: remove team_lead from autocomplete if you want filtering to apply
     autocomplete_fields = ['user']
 
     def team_members_list(self, obj):
         return ", ".join(member.name for member in obj.team_members.all()) or "No members"
     team_members_list.short_description = "Team Members"
-
 
 
 # ---------- Export all models to XLSX ----------
