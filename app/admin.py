@@ -82,7 +82,7 @@ class ExpertAdmin(AutoRefreshAdmin):
 
 @admin.register(Candidate)
 class CandidateAdmin(AutoRefreshAdmin):
-    list_display = ['id', 'name', 'technology', 'expert_status', 'status_flag']
+    list_display = ['id', 'name', 'technology', 'recruiter','expert_status', 'status_flag']
     list_filter = ['technology', 'status_flag', 'expert', 'recruiter']
     search_fields = ['name', 'email', 'phone_number']
     autocomplete_fields = ['technology', 'expert', 'recruiter']
