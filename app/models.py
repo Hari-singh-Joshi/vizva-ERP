@@ -132,6 +132,16 @@ class Case(models.Model):
         if kwargs.pop('validate', True):
             self.full_clean()
 
+        # Preserve original filled_by (never change once set)
+        if self.pk:
+            old = Case.objects.filter(pk=self.pk).only('filled_by').first()
+            if old and old.filled_by:
+                self.filled_by = old.filled_by
+
+        # Always auto-fill expert if empty and candidate exists
+        if self.candidate and not self.expert:
+            self.expert = self.candidate.expert
+
         # Snapshot candidate fields
         if self.candidate:
             self.candidate_technology = (
@@ -139,13 +149,9 @@ class Case(models.Model):
             )
             self.candidate_email = self.candidate.email
             self.candidate_phone = self.candidate.phone_number
-            self.candidate_resume=self.candidate.resume
+            self.candidate_resume = self.candidate.resume
 
-        # Auto-fill expert only if user didn't choose one; otherwise keep manual choice
-        if self.candidate and not self.expert:
-            self.expert = self.candidate.expert
-
-        # Status: 'assigned' if chosen expert equals candidate.expert, else 'tag'
+        # Status logic
         if self.candidate and self.expert:
             self.status = 'assigned' if self.candidate.expert_id == self.expert_id else 'tag'
         else:
