@@ -162,8 +162,8 @@ class CaseAdmin(AutoRefreshAdmin):
         return 'Not complete' if len(text) < 5 else 'Feedback done'
 
     def save_model(self, request, obj, form, change):
-        if not obj.filled_by:
-            obj.filled_by = request.user
+        if not change and not obj.filled_by:
+            obj.filled_by = request.user  # only on creation
         super().save_model(request, obj, form, change)
 
     def get_queryset(self, request):
