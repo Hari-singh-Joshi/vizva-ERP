@@ -89,7 +89,7 @@ class Candidate(models.Model):
     )
     email = models.EmailField(max_length=255)
     phone_number = models.CharField(max_length=20)
-    resume=models.URLField(unique=True, help_text="Google Drive shareable link")
+    resume=models.URLField(help_text="Google Drive shareable link")
     status_flag = models.BooleanField(default=True)
     def __str__(self):
         return self.name
