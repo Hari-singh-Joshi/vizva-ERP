@@ -162,6 +162,8 @@ class Case(models.Model):
     def __str__(self):
         return f"{self.company} | {self.candidate.name} | {self.date} | Status: {self.get_status_display()}"
 
+    class Meta:
+        ordering = ['-date', '-start_time']
 PO_TYPE_CHOICES = [
         ("INCENTIVIZED", 'Incentivized PO'),
         ("HONORABLE", 'Honorable PO'),
