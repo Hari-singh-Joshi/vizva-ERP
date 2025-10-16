@@ -107,7 +107,7 @@ class Case(models.Model):
     candidate = models.ForeignKey(Candidate, on_delete=models.CASCADE, related_name='cases')
     candidate_technology = models.CharField(max_length=100,null=True, blank=True)
     candidate_email = models.EmailField(max_length=255,null=True, blank=True)
-    candidate_resume=models.URLField(unique=True,null=True, blank=True)
+    candidate_resume=models.URLField(null=True, blank=True)
     candidate_phone = models.CharField(max_length=20,null=True, blank=True)
     date = models.DateField()
     start_time = models.TimeField(null=True, blank=True)
