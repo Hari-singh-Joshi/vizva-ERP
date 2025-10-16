@@ -42,6 +42,7 @@
   <table class="table table-hover align-middle">
     <thead class="table-light">
       <tr>
+        <th>Support Type</th>
         <th>Date</th>
         <th>Start Time</th>
         <th>End Time</th>
@@ -54,6 +55,7 @@
     <tbody id="cases-tbody">
       {% for case in cases %}
       <tr class="case-row">
+        <td>{{ case.support_type }}</td>
         <td>{{ case.date }}</td>
         <td>{{ case.start_time }}</td>
         <td>{{ case.end_time }}</td>
