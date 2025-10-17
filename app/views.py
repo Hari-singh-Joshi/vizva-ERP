@@ -154,5 +154,12 @@ def po_entry_list(request):
         'filter_candidate': candidate or "",
         'filter_company': company or "",
     })
-    
+
+from django.shortcuts import render
+from .models import Candidate
+
+def candidate_list(request):
+    expert = request.user.expert_profile  # assuming Expert is linked to User model (OneToOneField)
+    candidates = Candidate.objects.filter(expert=expert, status_flag=True)
+    return render(request, 'candidate.html', {'candidates': candidates})
 
