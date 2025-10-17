@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block content %}
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
+  <div class="container">
+    <a class="navbar-brand" href="#">Expert Panel</a>
+  </div>
+</nav>
+
+<div class="container">
+    <div class="card shadow">
+        <div class="card-header bg-primary text-white">
+            <h4 class="mb-0">Assigned Candidates</h4>
+        </div>
+        <div class="card-body">
+            {% if candidates %}
+                <div class="table-responsive">
+                    <table class="table table-striped align-middle">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>#</th>
+                                <th>Name</th>
+                                <th>Technology</th>
+                                <th>Recruiter</th>
+                                <th>Email</th>
+                                <th>Phone</th>
+                                <th>Resume</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for candidate in candidates %}
+                            <tr>
+                                <td>{{ forloop.counter }}</td>
+                                <td>{{ candidate.name }}</td>
+                                <td>{{ candidate.technology }}</td>
+                                <td>{{ candidate.recruiter }}</td>
+                                <td>{{ candidate.email }}</td>
+                                <td>{{ candidate.phone_number }}</td>
+                                <td><a href="{{ candidate.resume }}" target="_blank" class="btn btn-sm btn-outline-primary">View</a></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="alert alert-warning text-center">
+                    No candidates assigned to you at the moment.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<footer class="text-center mt-4 mb-3 text-muted">
+    &copy; {{ now|date:"Y" }} Vizva Consultancy UK ERP
+</footer>
+
+
+{% endblock %}
