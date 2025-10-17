@@ -28,7 +28,9 @@
     {% if user.is_authenticated %}
 
       <span class="me-3">Hi, {{ user.get_full_name|default:user.username }}</span>
-      <a href="{% url 'ph_list' %}" class="btn btn-outline-success me-2 btn-sm">My PO Entries</a>
+     <a href="{% url 'candidate_list' %}" class="btn btn-outline-secondary me-2 btn-sm"  data-bs-toggle="modal" data-bs-target="#busyModal">Busy</a>
+      <a href="{% url 'candidate_list' %}" class="btn btn-outline-primary me-2 btn-sm">My Candidates</a>
+      <a href="{% url 'ph_list' %}" class="btn btn-outline-success me-2 btn-sm">My POs</a>
       <a href="{% url 'logout' %}" class="btn btn-outline-danger btn-sm">Logout</a>
     {% else %}
       <span>
