@@ -148,6 +148,7 @@ class CaseAdmin(AutoRefreshAdmin):
         'expert__name',
         'feedback',
         'filled_by__username',
+        'date__icontains',
     ]
     autocomplete_fields = ['expert', 'task', 'support_type', 'round', 'filled_by']
     readonly_fields = [
