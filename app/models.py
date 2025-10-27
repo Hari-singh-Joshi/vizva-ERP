@@ -77,7 +77,7 @@ class Expert(models.Model):
 
 
 class Candidate(models.Model):
-    name = models.CharField(max_length=100)
+    name = models.CharField(max_length=100,unique=True)
     technology = models.ForeignKey(
         Technology, on_delete=models.CASCADE, related_name='candidates'
     )
@@ -87,8 +87,8 @@ class Candidate(models.Model):
     recruiter = models.ForeignKey(
         MarketingTeam, on_delete=models.SET_NULL, null=True, blank=True, related_name='candidates'
     )
-    email = models.EmailField(max_length=255)
-    phone_number = models.CharField(max_length=20)
+    email = models.EmailField(max_length=255,,unique=True)
+    phone_number = models.CharField(max_length=20,,unique=True)
     resume=models.URLField(help_text="Google Drive shareable link")
     status_flag = models.BooleanField(default=True)
     def __str__(self):
