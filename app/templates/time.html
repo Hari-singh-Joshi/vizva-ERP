@@ -1,0 +1,260 @@
+{% extends 'base.html' %}
+{% block title %}Timer | Case Management{% endblock %}
+
+{% block content %}
+
+<!-- LUXON -->
+<script src="https://cdn.jsdelivr.net/npm/luxon@3/build/global/luxon.min.js"></script>
+
+<style>
+  :root{
+  --bg: transparent;
+  --panel: transparent;
+  --panel-2: transparent;
+  --accent: transparent;
+  --accent-2: transparent;
+  --text: #000;     /* basic text */
+  --muted: #555;    /* muted text */
+  --ring: transparent;
+}
+
+.timer-container {
+  margin-top: 60px;
+  background: none;       /* removed gradients */
+  padding: 28px;
+  border-radius: 20px;
+}
+
+.app{
+  width:min(1200px, 100%);
+  display:grid;
+  gap:18px;
+  margin:auto;
+}
+
+.header{
+  display:flex; 
+  align-items:center; 
+  justify-content:space-between; 
+  gap:12px;
+}
+
+.title{
+  font-weight:700; 
+  font-size: clamp(18px,2.6vw,28px);
+  display:flex; 
+  align-items:center; 
+  gap:10px;
+  
+}
+
+.btn-custom{
+  background: #f0f0f0;    /* simple neutral */
+  color:#000;
+  border:1px solid #ccc;
+  padding:10px 14px; 
+  border-radius:12px;
+  font-weight:600; 
+  cursor:pointer;
+  transition:.2s;
+}
+
+.grid{
+  display:grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap:16px;
+}
+@media (max-width: 980px){
+  .grid{ grid-template-columns: 1fr }
+}
+
+.card{
+  border:1px solid #ddd;
+  border-radius:18px; 
+  padding:18px;
+  display:flex; 
+  flex-direction:column; 
+  gap:14px;
+}
+
+.clockface{
+  font-family: ui-monospace, monospace;
+  font-size: clamp(22px, 3.8vw, 34px);
+  letter-spacing: .5px;
+  padding:14px 16px; 
+  border-radius:14px;
+  background: #f7f7f7;
+  text-align:center;
+  color:#000;
+}
+
+.tag{ 
+  font-size:12px; 
+  padding:4px 8px; 
+  border-radius:8px; 
+  background: #e0e0e0;
+  color:#000;
+}
+
+select, input[type="datetime-local"], input[type="text"]{
+  width:100%; 
+  padding:10px 12px; 
+  border-radius:12px;
+  color:#000;
+  border:1px solid #ccc;
+  outline:none;
+  background:#fff;
+}
+
+</style>
+
+<div class="timer-container">
+  <div class="app">
+
+    <div class="header">
+      <div class="title"><span>⏰</span> World Clock + Timezone Converter</div>
+      <button id="backToNow" class="btn-custom">Back to Now</button>
+    </div>
+
+    <div class="grid" id="cards"></div>
+
+    <div class="text-muted small">
+      Precision: milliseconds | Engine: Luxon (DST-safe)
+    </div>
+
+  </div>
+</div>
+
+<script>
+(() => {
+  const { DateTime, IANAZone } = luxon;
+
+  let liveMode = true;
+  let currentInstant = DateTime.utc();
+
+  const DEFAULT_CARDS = [
+    { id: 'india', label: 'India', zone: 'Asia/Kolkata', tag: 'IST' },
+    { id: 'usa', label: 'New York', zone: 'America/New_York', tag: 'ET' },
+    { id: 'uk', label: 'London', zone: 'Europe/London', tag: 'UK' },
+  ];
+
+  const COMMON_ZONES = [
+    'Asia/Kolkata','Asia/Dubai','Asia/Singapore','Asia/Tokyo',
+    'Europe/London','Europe/Paris','Europe/Berlin',
+    'America/New_York','America/Chicago','America/Denver','America/Los_Angeles',
+    'Australia/Sydney'
+  ];
+
+  const grid = document.getElementById('cards');
+  DEFAULT_CARDS.forEach(def => grid.appendChild(makeCard(def)));
+
+  document.getElementById('backToNow').addEventListener('click', () => {
+    liveMode = true;
+    tick();
+  });
+
+  function tick(){
+    currentInstant = liveMode ? DateTime.utc() : currentInstant;
+    DEFAULT_CARDS.forEach(def => renderCard(def.id));
+    if (liveMode) requestAnimationFrame(tick);
+  }
+  tick();
+
+  function makeCard(def){
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.id = `card-${def.id}`;
+    card.dataset.zone = def.zone;
+
+    card.innerHTML = `
+      <div class="d-flex justify-content-between">
+        <div class="fw-bold">${def.label} <span class="tag" id="${def.id}-abbr">${def.tag}</span></div>
+        <div><span class="badge bg-secondary" id="${def.id}-offset">UTC+00:00</span></div>
+      </div>
+
+      <div class="clockface" id="${def.id}-clock">--:--:--.---</div>
+
+      <div>
+        <label class="text-muted small">Timezone</label>
+        <select id="${def.id}-zone">${zoneOptions(def.zone)}</select>
+      </div>
+
+      <div>
+        <label class="text-muted small">Convert</label>
+        <input type="datetime-local" id="${def.id}-dt">
+      </div>
+    `;
+
+    const sel = card.querySelector(`#${def.id}-zone`);
+    const dtInput = card.querySelector(`#${def.id}-dt`);
+
+    sel.addEventListener('change', () => {
+      setZone(def.id, sel.value);
+      renderAllFromCurrentInstant();
+    });
+
+    dtInput.addEventListener('input', () => {
+      const zone = card.dataset.zone;
+      const value = dtInput.value;
+      if (!value) return;
+
+      const dt = DateTime.fromISO(value, { zone });
+      if (!dt.isValid) return;
+
+      currentInstant = dt.toUTC();
+      liveMode = false;
+      renderAllFromCurrentInstant(def.id);
+    });
+
+    setTimeout(() => {
+      dtInput.value = DateTime.now().setZone(def.zone).toFormat("yyyy-LL-dd'T'HH:mm");
+    }, 10);
+
+    return card;
+  }
+
+  function zoneOptions(selected){
+    return `
+      ${COMMON_ZONES.map(z => `<option ${z===selected?'selected':''}>${z}</option>`).join('')}
+    `;
+  }
+
+  function setZone(cardId, zone){
+    const card = document.getElementById(`card-${cardId}`);
+    card.dataset.zone = zone;
+
+    const sample = currentInstant.setZone(zone);
+    card.querySelector(`#${cardId}-abbr`).textContent = sample.offsetNameShort || sample.offsetNameLong;
+    card.querySelector(`#${cardId}-offset`).textContent = "UTC" + formatOffset(sample.offset);
+  }
+
+  function renderCard(id){
+    const card = document.getElementById(`card-${id}`);
+    const zone = card.dataset.zone;
+    const zdt = currentInstant.setZone(zone);
+
+    card.querySelector(`#${id}-clock`).textContent = zdt.toFormat('HH:mm:ss.SSS');
+    card.querySelector(`#${id}-offset`).textContent = "UTC" + formatOffset(zdt.offset);
+  }
+
+  function renderAllFromCurrentInstant(skipId){
+    DEFAULT_CARDS.forEach(def => {
+      const zone = document.getElementById(`card-${def.id}`).dataset.zone;
+      const local = currentInstant.setZone(zone);
+      document.getElementById(`${def.id}-dt`).value =
+        local.toFormat("yyyy-LL-dd'T'HH:mm");
+
+      if (def.id !== skipId) renderCard(def.id);
+    });
+  }
+
+  function formatOffset(minutes){
+    const sign = minutes >= 0 ? '+' : '-';
+    const abs = Math.abs(minutes);
+    return `${sign}${String(Math.floor(abs/60)).padStart(2,'0')}:${String(abs%60).padStart(2,'0')}`;
+  }
+
+})();
+</script>
+
+{% endblock %}
