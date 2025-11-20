@@ -30,7 +30,7 @@
       <span class="material-icons text-primary" style="font-size:2rem;">dashboard</span>
       <span class="ms-2 fw-bold">Case Management</span>
     </a>
-
+ <a href="{% url 'timer' %}" class="btn btn-outline-success btn-sm">Timer</a>
     <div class="ms-auto d-flex align-items-center gap-2">
       {% if user.is_authenticated %}
         <span class="me-3">Hi, {{ user.get_full_name|default:user.username }}</span>
