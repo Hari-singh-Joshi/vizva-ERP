@@ -66,7 +66,7 @@ def case_list(request):
         cases = cases.filter(support_type__support_name__icontains=support_type)
 
     candidates = Candidate.objects.all()
-
+    cases=cases[:100]
     return render(request, 'home.html', {
         'cases': cases,
         'candidates': candidates,
@@ -163,3 +163,5 @@ def candidate_list(request):
     candidates = Candidate.objects.filter(expert=expert, status_flag=True)
     return render(request, 'candidate.html', {'candidates': candidates})
 
+def timer(request):
+    return render(request,"time.html")
