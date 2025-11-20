@@ -87,7 +87,7 @@ class Candidate(models.Model):
     recruiter = models.ForeignKey(
         MarketingTeam, on_delete=models.SET_NULL, null=True, blank=True, related_name='candidates'
     )
-    email = models.EmailField(max_length=255,,unique=True)
+    email = models.EmailField(max_length=255,unique=True)
     phone_number = models.CharField(max_length=20,,unique=True)
     resume=models.URLField(help_text="Google Drive shareable link")
     status_flag = models.BooleanField(default=True)
